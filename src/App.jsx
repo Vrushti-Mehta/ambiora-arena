@@ -1,55 +1,1249 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import { Link, Route, Routes, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowDownRight, ArrowLeft, ArrowRight, Atom, AudioLines, Bot, Check, ChevronDown, CircleDot, Copy, Crosshair, Crown, Gamepad2, Menu, Plus, Radio, RotateCcw, Shield, Sparkles, Swords, Target, Trophy, Users, X, Zap } from 'lucide-react'
-import { clearTournament, loadTournament, saveTournament } from './utils/storage'
+import {
+  ArrowDownRight,
+  ArrowLeft,
+  ArrowRight,
+  Atom,
+  AudioLines,
+  Check,
+  ChevronDown,
+  CircleDot,
+  Copy,
+  Crosshair,
+  Gamepad2,
+  Menu,
+  Plus,
+  Radio,
+  RotateCcw,
+  Shield,
+  Sparkles,
+  Swords,
+  Target,
+  Trophy,
+  Users,
+  X,
+  Zap
+} from 'lucide-react'
+
+import {
+  clearTournament,
+  loadTournament,
+  saveTournament
+} from './utils/storage'
+
 import { generateFixtures } from './utils/fixtureGenerator'
 import { emailValid, initials } from './utils/validation'
 
-const accents = ['#a78bfa', '#5ee7ff', '#ff8b68', '#c2f36b', '#ff71b8', '#f7ca66']
-const roles = ['DUELIST', 'CONTROLLER', 'INITIATOR', 'SENTINEL', 'FLEX']
-const tones = ['AGGRESSIVE', 'CINEMATIC', 'FEARLESS', 'TACTICAL', 'MYSTERIOUS']
-const uid = () => crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`
+const accents = [
+  '#a78bfa',
+  '#5ee7ff',
+  '#ff8b68',
+  '#c2f36b',
+  '#ff71b8',
+  '#f7ca66'
+]
+
+const roles = [
+  'DUELIST',
+  'CONTROLLER',
+  'INITIATOR',
+  'SENTINEL',
+  'FLEX'
+]
+
+const tones = [
+  'AGGRESSIVE',
+  'CINEMATIC',
+  'FEARLESS',
+  'TACTICAL',
+  'MYSTERIOUS'
+]
+
+const uid = () =>
+  crypto.randomUUID?.() ||
+  `${Date.now()}-${Math.random().toString(16).slice(2)}`
+
 const fmt = n => String(n).padStart(2, '0')
+
 
 function App() {
   const [data, setData] = useState(loadTournament)
   const [toast, setToast] = useState('')
-  useEffect(() => { saveTournament(data) }, [data])
-  useEffect(() => { if (!toast) return; const timer = setTimeout(() => setToast(''), 3200); return () => clearTimeout(timer) }, [toast])
-  const update = fn => setData(prev => fn(structuredClone(prev)))
-  return <><Routes><Route path="/" element={<LandingPage />} /><Route path="/tournament" element={<TournamentPage data={data} update={update} notify={setToast} />} /><Route path="*" element={<LandingPage />} /></Routes><AnimatePresence>{toast && <motion.div className="toast" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }}><Check size={17}/>{toast}</motion.div>}</AnimatePresence></>
+
+  useEffect(() => {
+    saveTournament(data)
+  }, [data])
+
+  useEffect(() => {
+    if (!toast) return
+
+    const timer = setTimeout(() => {
+      setToast('')
+    }, 3200)
+
+    return () => clearTimeout(timer)
+  }, [toast])
+
+  const update = fn => {
+    setData(prev => fn(structuredClone(prev)))
+  }
+
+  return (
+    <>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+
+        <Route
+          path="/tournament"
+          element={
+            <TournamentPage
+              data={data}
+              update={update}
+              notify={setToast}
+            />
+          }
+        />
+
+        <Route path="*" element={<LandingPage />} />
+      </Routes>
+
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            className="toast"
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+          >
+            <Check size={17} />
+            {toast}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  )
 }
 
-function Brand({ compact = false }) { return <Link to="/" className="brand"><span className="brand-mark"><Atom size={19}/></span><span>AMBIORA <b>ARENA</b>{!compact && <small>COMPETITIVE DIVISION</small>}</span></Link> }
+
+/* =========================================================
+   BRAND
+========================================================= */
+
+function Brand({ compact = false }) {
+  return (
+    <Link to="/" className="brand">
+      <span className="brand-mark">
+        <Atom size={19} />
+      </span>
+
+      <span>
+        AMBIORA <b>ARENA</b>
+
+        {!compact && (
+          <small>COMPETITIVE DIVISION</small>
+        )}
+      </span>
+    </Link>
+  )
+}
+
+
+/* =========================================================
+   NAVBAR
+========================================================= */
+
 function Navbar() {
   const [open, setOpen] = useState(false)
-  return <header className="navbar"><Brand/><nav className={open ? 'nav-links open' : 'nav-links'}><a href="/#home" onClick={() => setOpen(false)}>HOME</a><a href="/#format" onClick={() => setOpen(false)}>TOURNAMENT</a><a href="/#teams" onClick={() => setOpen(false)}>TEAMS</a><Link to="/tournament" className="nav-cta" onClick={() => setOpen(false)}>ENTER ARENA <ArrowRight size={15}/></Link></nav><button className="menu-toggle" onClick={() => setOpen(!open)} aria-label={open ? 'Close menu' : 'Open menu'}>{open ? <X/> : <Menu/>}</button></header>
-}
-function Reveal({ children, className = '', delay = 0 }) { return <motion.div className={className} initial={{ opacity: 0, y: 22 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .15 }} transition={{ duration: .55, delay, ease: [.22, .61, .36, 1] }}>{children}</motion.div> }
-function LandingPage() {
-  const features = [{ icon: <Users/>, title: 'BUILD YOUR SQUAD', text: 'Create your team and assemble your five-player roster.' }, { icon: <Swords/>, title: 'CLASH', text: 'Face every opponent in the tournament.' }, { icon: <Crosshair/>, title: 'TRACK', text: 'View every fixture and matchup in one place.' }, { icon: <Trophy/>, title: 'RISE', text: 'Compete, adapt and make your mark.' }]
-  return <div className="landing"><Navbar/><main>
-    <section className="hero" id="home"><div className="hero-grid"/><div className="hero-orb orb-one"/><div className="hero-orb orb-two"/><div className="hero-scan"/>
-      <div className="hero-content"><motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .15 }} className="eyebrow"><span className="live-dot"/> TOURNAMENT // 2026 <span className="eyebrow-line"/></motion.div>
-      <motion.p className="hero-brand" initial={{ opacity: 0, letterSpacing: '0.45em' }} animate={{ opacity: 1, letterSpacing: '0.2em' }} transition={{ duration: .85 }}>AMBIORA ARENA</motion.p>
-      <motion.h1 initial={{ opacity: 0, y: 25 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .25, duration: .7 }}>ENTER THE ARENA.<br/><span>MAKE YOUR MARK.</span></motion.h1>
-      <motion.p className="hero-copy" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: .5 }}>Build your squad. Face every opponent.<br/>Leave your mark on the arena.</motion.p>
-      <motion.div className="hero-actions" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .62 }}><Link to="/tournament" className="button button-primary">ENTER TOURNAMENT <ArrowRight size={17}/></Link><a href="#teams" className="button button-quiet">EXPLORE TEAMS <ArrowDownRight size={16}/></a></motion.div>
-      <motion.div className="hero-foot" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: .9 }}><span><Radio size={13}/> LIVE EVENT SYSTEM</span><span>EST. 2026</span></motion.div></div>
-      <div className="hero-coordinate">19°04' N &nbsp; 72°52' E</div><div className="hero-side-note">ENTER THE ARENA <span>✳</span> MAKE YOUR MARK</div><div className="hero-visual" aria-hidden="true"><div className="reticle reticle-a"/><div className="reticle reticle-b"/><div className="arena-core"><div className="core-ring ring-a"/><div className="core-ring ring-b"/><div className="core-ring ring-c"/><div className="core-center"><Zap size={27}/></div></div><div className="hud hud-left"><small>ARENA SIGNAL</small><b>ONLINE</b><i/></div><div className="hud hud-right"><small>ROSTER</small><b>05 / 05</b><div className="hud-bars"><i/><i/><i/><i/><i/></div></div><div className="visual-caption">01 — THE ARENA IS YOURS</div></div><div className="hero-bottom"><span>SCROLL TO EXPLORE</span><div/></div>
-    </section>
-    <section className="stats-strip" id="teams"><div className="stats-intro"><span className="section-kicker">THE FIELD IS SET</span><p>ONE ARENA.<br/>EVERYTHING TO PROVE.</p></div><div className="stats-values">{[['05','TEAMS'],['25','PLAYERS'],['10','MATCHES'],['01','CHAMPION']].map(([n,l],i)=><Reveal key={l} delay={i*.08}><div className="stat-value"><strong>{n}</strong><span>{l}</span></div></Reveal>)}</div><div className="stats-format">05 TEAMS <i>•</i> 25 PLAYERS <i>•</i> 10 MATCHES</div></section>
-    <section className="features section-wrap"><Reveal><div className="section-heading"><div><span className="section-kicker">THE ARENA ADVANTAGE / 01</span><h2>BUILT FOR<br/><em>THE CLASH.</em></h2></div><p>Every great run starts with a team.<br/>Everything else is earned.</p></div></Reveal><div className="feature-grid">{features.map((feature,i)=><Reveal delay={i*.06} key={feature.title}><article className="feature-card"><div className="feature-top"><span>0{i+1} / SYSTEM</span>{feature.icon}</div><h3>{feature.title}</h3><p>{feature.text}</p><div className="feature-rule"/></article></Reveal>)}</div></section>
-    <section className="format-section section-wrap" id="format"><Reveal><div className="section-heading"><div><span className="section-kicker">TOURNAMENT FORMAT / 02</span><h2>NO EASY<br/><em>ROUTES.</em></h2></div><p>Every team plays every other team exactly once.<br/>The standings tell the story.</p></div></Reveal><div className="format-flow">{[['05','TEAMS'],['01','ROUND ROBIN'],['10','MATCHES'],['∞','FINAL STANDINGS']].map(([n,l],i)=><Reveal key={l} delay={i*.1}><div className="flow-node"><div className="flow-number">{n}</div><span>{l}</span></div></Reveal>)}</div><div className="flow-connector"><i/><i/><i/></div><div className="format-caption"><span>01 TEAM VS TEAM</span><span>02 NO SECOND CHANCES</span><span>03 ONE CHAMPION</span></div></section>
-    <section className="lab-teaser"><div className="lab-lines"/><Reveal className="lab-teaser-inner"><div><span className="section-kicker"><Sparkles size={13}/> AI TEAM LAB / 03</span><h2>GIVE YOUR<br/><em>SQUAD A VOICE.</em></h2><p>Generate a cinematic esports introduction<br/>for your team using AI.</p><Link to="/tournament" state={{ scrollTo: 'ai-lab' }} className="button button-outline">TRY AI TEAM LAB <ArrowRight size={16}/></Link></div><div className="lab-art"><div className="lab-orbit orbit-1"/><div className="lab-orbit orbit-2"/><div className="lab-orbit orbit-3"/><div className="lab-chip"><AudioLines size={30}/><span>VOICE<br/>OF THE ARENA</span></div><div className="lab-art-index">AA—AI / 01</div></div></Reveal></section>
-    <section className="final-cta"><div className="cta-cross">✳</div><Reveal><span className="section-kicker">YOUR MOMENT STARTS HERE</span><h2>READY TO<br/><em>COMPETE?</em></h2><p>Five squads. Twenty-five contenders. One arena.</p><Link to="/tournament" className="button button-primary">BUILD YOUR TEAM <ArrowRight size={17}/></Link></Reveal><div className="cta-backdrop">ARENA</div></section>
-  </main><Footer/></div>
-}
-function Footer() { return <footer className="footer"><Brand compact/><div className="footer-mid"><span>TOURNAMENT // 2026</span><p>Enter the arena. Make your mark.</p></div><div className="footer-links"><Link to="/">HOME</Link><a href="/#format">FORMAT</a><Link to="/tournament">TOURNAMENT</Link></div><span className="footer-copy">© 2026 AMBIORA ARENA</span></footer> }
 
-function TournamentPage({ data, update, notify }) {
-  const [playerForm, setPlayerForm] = useState({ name: '', gamerTag: '', email: '', role: '' })
+  return (
+    <header className="navbar">
+      <Brand />
+
+      <nav className={open ? 'nav-links open' : 'nav-links'}>
+        <a
+          href="/#home"
+          onClick={() => setOpen(false)}
+        >
+          HOME
+        </a>
+
+        <a
+          href="/#format"
+          onClick={() => setOpen(false)}
+        >
+          TOURNAMENT
+        </a>
+
+        <a
+          href="/#teams"
+          onClick={() => setOpen(false)}
+        >
+          TEAMS
+        </a>
+
+        <Link
+          to="/tournament"
+          className="nav-cta"
+          onClick={() => setOpen(false)}
+        >
+          ENTER ARENA
+          <ArrowRight size={15} />
+        </Link>
+      </nav>
+
+      <button
+        className="menu-toggle"
+        onClick={() => setOpen(!open)}
+        aria-label={open ? 'Close menu' : 'Open menu'}
+      >
+        {open ? <X /> : <Menu />}
+      </button>
+    </header>
+  )
+}
+
+
+/* =========================================================
+   REVEAL ANIMATION
+========================================================= */
+
+function Reveal({
+  children,
+  className = '',
+  delay = 0
+}) {
+  return (
+    <motion.div
+      className={className}
+      initial={{
+        opacity: 0,
+        y: 22
+      }}
+      whileInView={{
+        opacity: 1,
+        y: 0
+      }}
+      viewport={{
+        once: true,
+        amount: 0.15
+      }}
+      transition={{
+        duration: 0.55,
+        delay,
+        ease: [0.22, 0.61, 0.36, 1]
+      }}
+    >
+      {children}
+    </motion.div>
+  )
+}
+
+
+/* =========================================================
+   LANDING PAGE
+========================================================= */
+
+function LandingPage() {
+  const features = [
+    {
+      icon: <Users />,
+      title: 'BUILD YOUR SQUAD',
+      text: 'Create your team and assemble your five-player roster.'
+    },
+    {
+      icon: <Swords />,
+      title: 'CLASH',
+      text: 'Face every opponent in the tournament.'
+    },
+    {
+      icon: <Crosshair />,
+      title: 'TRACK',
+      text: 'View every fixture and matchup in one place.'
+    },
+    {
+      icon: <Trophy />,
+      title: 'RISE',
+      text: 'Compete, adapt and make your mark.'
+    }
+  ]
+
+  return (
+    <div className="landing">
+      <Navbar />
+
+      <main>
+
+        {/* ================= HERO ================= */}
+
+        <section className="hero" id="home">
+
+          <div className="hero-grid" />
+
+          <motion.div
+            className="hero-orb orb-one"
+            animate={{
+              x: [0, 25, 0],
+              y: [0, -20, 0],
+              scale: [1, 1.08, 1]
+            }}
+            transition={{
+              duration: 7,
+              repeat: Infinity,
+              ease: 'easeInOut'
+            }}
+          />
+
+          <motion.div
+            className="hero-orb orb-two"
+            animate={{
+              x: [0, -20, 0],
+              y: [0, 25, 0],
+              scale: [1, 1.12, 1]
+            }}
+            transition={{
+              duration: 8,
+              repeat: Infinity,
+              ease: 'easeInOut'
+            }}
+          />
+
+          <motion.div
+            className="hero-scan"
+            animate={{
+              y: ['-100%', '100%']
+            }}
+            transition={{
+              duration: 5,
+              repeat: Infinity,
+              ease: 'linear'
+            }}
+          />
+
+          <div className="hero-content">
+
+            <motion.div
+              className="eyebrow"
+              initial={{
+                opacity: 0,
+                y: 10
+              }}
+              animate={{
+                opacity: 1,
+                y: 0
+              }}
+              transition={{
+                delay: 0.15,
+                duration: 0.6
+              }}
+            >
+              <span className="live-dot" />
+              TOURNAMENT // 2026
+              <span className="eyebrow-line" />
+            </motion.div>
+
+            <motion.p
+              className="hero-brand"
+              initial={{
+                opacity: 0,
+                letterSpacing: '0.45em'
+              }}
+              animate={{
+                opacity: 1,
+                letterSpacing: '0.2em'
+              }}
+              transition={{
+                duration: 0.9,
+                ease: [0.22, 0.61, 0.36, 1]
+              }}
+            >
+              AMBIORA ARENA
+            </motion.p>
+
+            <motion.h1
+              initial={{
+                opacity: 0,
+                y: 30,
+                filter: 'blur(8px)'
+              }}
+              animate={{
+                opacity: 1,
+                y: 0,
+                filter: 'blur(0px)'
+              }}
+              transition={{
+                delay: 0.25,
+                duration: 0.8,
+                ease: [0.22, 0.61, 0.36, 1]
+              }}
+            >
+              ENTER THE ARENA.
+              <br />
+              <span>MAKE YOUR MARK.</span>
+            </motion.h1>
+
+            <motion.p
+              className="hero-copy"
+              initial={{
+                opacity: 0,
+                y: 12
+              }}
+              animate={{
+                opacity: 1,
+                y: 0
+              }}
+              transition={{
+                delay: 0.5,
+                duration: 0.6
+              }}
+            >
+              Build your squad. Face every opponent.
+              <br />
+              Leave your mark on the arena.
+            </motion.p>
+
+            <motion.div
+              className="hero-actions"
+              initial={{
+                opacity: 0,
+                y: 15
+              }}
+              animate={{
+                opacity: 1,
+                y: 0
+              }}
+              transition={{
+                delay: 0.62,
+                duration: 0.6
+              }}
+            >
+
+              <motion.div
+                whileHover={{
+                  scale: 1.04,
+                  y: -2
+                }}
+                whileTap={{
+                  scale: 0.97
+                }}
+              >
+                <Link
+                  to="/tournament"
+                  className="button button-primary"
+                >
+                  ENTER TOURNAMENT
+                  <ArrowRight size={17} />
+                </Link>
+              </motion.div>
+
+              <motion.div
+                whileHover={{
+                  x: 4
+                }}
+                whileTap={{
+                  scale: 0.97
+                }}
+              >
+                <a
+                  href="#teams"
+                  className="button button-quiet"
+                >
+                  EXPLORE TEAMS
+                  <ArrowDownRight size={16} />
+                </a>
+              </motion.div>
+
+            </motion.div>
+
+            <motion.div
+              className="hero-foot"
+              initial={{
+                opacity: 0
+              }}
+              animate={{
+                opacity: 1
+              }}
+              transition={{
+                delay: 0.9,
+                duration: 0.6
+              }}
+            >
+              <span>
+                <Radio size={13} />
+                LIVE EVENT SYSTEM
+              </span>
+
+              <span>
+                EST. 2026
+              </span>
+            </motion.div>
+
+          </div>
+
+          <div className="hero-coordinate">
+            19°04' N &nbsp; 72°52' E
+          </div>
+
+          <div className="hero-side-note">
+            ENTER THE ARENA
+            <span>✳</span>
+            MAKE YOUR MARK
+          </div>
+
+
+          {/* ================= HERO VISUAL ================= */}
+
+          <div
+            className="hero-visual"
+            aria-hidden="true"
+          >
+
+            <motion.div
+              className="reticle reticle-a"
+              animate={{
+                rotate: 360
+              }}
+              transition={{
+                duration: 18,
+                repeat: Infinity,
+                ease: 'linear'
+              }}
+            />
+
+            <motion.div
+              className="reticle reticle-b"
+              animate={{
+                rotate: -360
+              }}
+              transition={{
+                duration: 24,
+                repeat: Infinity,
+                ease: 'linear'
+              }}
+            />
+
+            <motion.div
+              className="arena-core"
+              animate={{
+                rotate: 360,
+                scale: [1, 1.08, 1]
+              }}
+              transition={{
+                rotate: {
+                  duration: 12,
+                  repeat: Infinity,
+                  ease: 'linear'
+                },
+                scale: {
+                  duration: 3,
+                  repeat: Infinity,
+                  ease: 'easeInOut'
+                }
+              }}
+            >
+
+              <motion.div
+                className="core-ring ring-a"
+                animate={{
+                  rotate: -360,
+                  scale: [1, 1.03, 1]
+                }}
+                transition={{
+                  rotate: {
+                    duration: 5,
+                    repeat: Infinity,
+                    ease: 'linear'
+                  },
+                  scale: {
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: 'easeInOut'
+                  }
+                }}
+              />
+
+              <motion.div
+                className="core-ring ring-b"
+                animate={{
+                  rotate: 360
+                }}
+                transition={{
+                  duration: 7,
+                  repeat: Infinity,
+                  ease: 'linear'
+                }}
+              />
+
+              <motion.div
+                className="core-ring ring-c"
+                animate={{
+                  rotate: -360,
+                  scale: [1, 1.08, 1]
+                }}
+                transition={{
+                  rotate: {
+                    duration: 3.5,
+                    repeat: Infinity,
+                    ease: 'linear'
+                  },
+                  scale: {
+                    duration: 1.8,
+                    repeat: Infinity,
+                    ease: 'easeInOut'
+                  }
+                }}
+              />
+
+              <motion.div
+                className="core-center"
+                animate={{
+                  scale: [1, 1.25, 1],
+                  opacity: [0.65, 1, 0.65]
+                }}
+                transition={{
+                  duration: 1.5,
+                  repeat: Infinity,
+                  ease: 'easeInOut'
+                }}
+              >
+                <Zap size={27} />
+              </motion.div>
+
+            </motion.div>
+
+
+            {/* LEFT HUD */}
+
+            <motion.div
+              className="hud hud-left"
+              initial={{
+                opacity: 0,
+                x: -15
+              }}
+              animate={{
+                opacity: 1,
+                x: 0
+              }}
+              transition={{
+                delay: 1,
+                duration: 0.7
+              }}
+            >
+              <small>ARENA SIGNAL</small>
+              <b>ONLINE</b>
+
+              <motion.i
+                animate={{
+                  opacity: [0.3, 1, 0.3]
+                }}
+                transition={{
+                  duration: 1.4,
+                  repeat: Infinity
+                }}
+              />
+            </motion.div>
+
+
+            {/* RIGHT HUD */}
+
+            <motion.div
+              className="hud hud-right"
+              initial={{
+                opacity: 0,
+                x: 15
+              }}
+              animate={{
+                opacity: 1,
+                x: 0
+              }}
+              transition={{
+                delay: 1.1,
+                duration: 0.7
+              }}
+            >
+              <small>ROSTER</small>
+              <b>05 / 05</b>
+
+              <div className="hud-bars">
+
+                {[0, 1, 2, 3, 4].map(i => (
+                  <motion.i
+                    key={i}
+                    animate={{
+                      opacity: [0.25, 1, 0.25]
+                    }}
+                    transition={{
+                      duration: 1.2,
+                      repeat: Infinity,
+                      delay: i * 0.15
+                    }}
+                  />
+                ))}
+
+              </div>
+            </motion.div>
+
+
+            <motion.div
+              className="visual-caption"
+              initial={{
+                opacity: 0
+              }}
+              animate={{
+                opacity: 1
+              }}
+              transition={{
+                delay: 1.3,
+                duration: 0.8
+              }}
+            >
+              01 — THE ARENA IS YOURS
+            </motion.div>
+
+          </div>
+
+
+          {/* HERO BOTTOM */}
+
+          <motion.div
+            className="hero-bottom"
+            initial={{
+              opacity: 0
+            }}
+            animate={{
+              opacity: 1
+            }}
+            transition={{
+              delay: 1.4
+            }}
+          >
+            <span>SCROLL TO EXPLORE</span>
+
+            <motion.div
+              animate={{
+                scaleX: [0.4, 1, 0.4]
+              }}
+              transition={{
+                duration: 1.8,
+                repeat: Infinity,
+                ease: 'easeInOut'
+              }}
+            />
+          </motion.div>
+
+        </section>
+
+
+        {/* ================= STATS ================= */}
+
+        <section
+          className="stats-strip"
+          id="teams"
+        >
+
+          <div className="stats-intro">
+            <span className="section-kicker">
+              THE FIELD IS SET
+            </span>
+
+            <p>
+              ONE ARENA.
+              <br />
+              EVERYTHING TO PROVE.
+            </p>
+          </div>
+
+          <div className="stats-values">
+
+            {[
+              ['05', 'TEAMS'],
+              ['25', 'PLAYERS'],
+              ['10', 'MATCHES'],
+              ['01', 'CHAMPION']
+            ].map(([n, l], i) => (
+
+              <Reveal
+                key={l}
+                delay={i * 0.08}
+              >
+                <motion.div
+                  className="stat-value"
+                  whileHover={{
+                    y: -6,
+                    scale: 1.03
+                  }}
+                  transition={{
+                    type: 'spring',
+                    stiffness: 300,
+                    damping: 20
+                  }}
+                >
+                  <strong>{n}</strong>
+                  <span>{l}</span>
+                </motion.div>
+              </Reveal>
+
+            ))}
+
+          </div>
+
+          <div className="stats-format">
+            05 TEAMS
+            <i>•</i>
+            25 PLAYERS
+            <i>•</i>
+            10 MATCHES
+          </div>
+
+        </section>
+
+
+        {/* ================= FEATURES ================= */}
+
+        <section className="features section-wrap">
+
+          <Reveal>
+
+            <div className="section-heading">
+
+              <div>
+
+                <span className="section-kicker">
+                  THE ARENA ADVANTAGE / 01
+                </span>
+
+                <h2>
+                  BUILT FOR
+                  <br />
+                  <em>THE CLASH.</em>
+                </h2>
+
+              </div>
+
+              <p>
+                Every great run starts with a team.
+                <br />
+                Everything else is earned.
+              </p>
+
+            </div>
+
+          </Reveal>
+
+
+          <div className="feature-grid">
+
+            {features.map((feature, i) => (
+
+              <Reveal
+                delay={i * 0.06}
+                key={feature.title}
+              >
+
+                <motion.article
+                  className="feature-card"
+                  whileHover={{
+                    y: -8
+                  }}
+                  transition={{
+                    type: 'spring',
+                    stiffness: 250,
+                    damping: 20
+                  }}
+                >
+
+                  <div className="feature-top">
+                    <span>
+                      0{i + 1} / SYSTEM
+                    </span>
+
+                    {feature.icon}
+                  </div>
+
+                  <h3>
+                    {feature.title}
+                  </h3>
+
+                  <p>
+                    {feature.text}
+                  </p>
+
+                  <div className="feature-rule" />
+
+                </motion.article>
+
+              </Reveal>
+
+            ))}
+
+          </div>
+
+        </section>
+
+
+        {/* ================= FORMAT ================= */}
+
+        <section
+          className="format-section section-wrap"
+          id="format"
+        >
+
+          <Reveal>
+
+            <div className="section-heading">
+
+              <div>
+
+                <span className="section-kicker">
+                  TOURNAMENT FORMAT / 02
+                </span>
+
+                <h2>
+                  NO EASY
+                  <br />
+                  <em>ROUTES.</em>
+                </h2>
+
+              </div>
+
+              <p>
+                Every team plays every other team exactly once.
+                <br />
+                The standings tell the story.
+              </p>
+
+            </div>
+
+          </Reveal>
+
+
+          <div className="format-flow">
+
+            {[
+              ['05', 'TEAMS'],
+              ['01', 'ROUND ROBIN'],
+              ['10', 'MATCHES'],
+              ['∞', 'FINAL STANDINGS']
+            ].map(([n, l], i) => (
+
+              <Reveal
+                key={l}
+                delay={i * 0.1}
+              >
+
+                <motion.div
+                  className="flow-node"
+                  whileHover={{
+                    y: -7,
+                    scale: 1.04
+                  }}
+                  transition={{
+                    type: 'spring',
+                    stiffness: 250,
+                    damping: 20
+                  }}
+                >
+
+                  <div className="flow-number">
+                    {n}
+                  </div>
+
+                  <span>
+                    {l}
+                  </span>
+
+                </motion.div>
+
+              </Reveal>
+
+            ))}
+
+          </div>
+
+
+          <motion.div
+            className="flow-connector"
+            initial={{
+              opacity: 0,
+              scaleX: 0
+            }}
+            whileInView={{
+              opacity: 1,
+              scaleX: 1
+            }}
+            viewport={{
+              once: true
+            }}
+            transition={{
+              duration: 0.9
+            }}
+          >
+            <i />
+            <i />
+            <i />
+          </motion.div>
+
+
+          <div className="format-caption">
+            <span>01 TEAM VS TEAM</span>
+            <span>02 NO SECOND CHANCES</span>
+            <span>03 ONE CHAMPION</span>
+          </div>
+
+        </section>
+
+
+        {/* ================= AI TEASER ================= */}
+
+        <section className="lab-teaser">
+
+          <div className="lab-lines" />
+
+          <Reveal className="lab-teaser-inner">
+
+            <div>
+
+              <span className="section-kicker">
+                <Sparkles size={13} />
+                AI TEAM LAB / 03
+              </span>
+
+              <h2>
+                GIVE YOUR
+                <br />
+                <em>SQUAD A VOICE.</em>
+              </h2>
+
+              <p>
+                Generate a cinematic esports introduction
+                <br />
+                for your team using AI.
+              </p>
+
+              <motion.div
+                whileHover={{
+                  x: 5
+                }}
+                whileTap={{
+                  scale: 0.97
+                }}
+              >
+                <Link
+                  to="/tournament"
+                  state={{
+                    scrollTo: 'ai-lab'
+                  }}
+                  className="button button-outline"
+                >
+                  TRY AI TEAM LAB
+                  <ArrowRight size={16} />
+                </Link>
+              </motion.div>
+
+            </div>
+
+
+            <div className="lab-art">
+
+              <motion.div
+                className="lab-orbit orbit-1"
+                animate={{
+                  rotate: 360
+                }}
+                transition={{
+                  duration: 14,
+                  repeat: Infinity,
+                  ease: 'linear'
+                }}
+              />
+
+              <motion.div
+                className="lab-orbit orbit-2"
+                animate={{
+                  rotate: -360
+                }}
+                transition={{
+                  duration: 10,
+                  repeat: Infinity,
+                  ease: 'linear'
+                }}
+              />
+
+              <motion.div
+                className="lab-orbit orbit-3"
+                animate={{
+                  rotate: 360
+                }}
+                transition={{
+                  duration: 7,
+                  repeat: Infinity,
+                  ease: 'linear'
+                }}
+              />
+
+
+              <motion.div
+                className="lab-chip"
+                animate={{
+                  scale: [1, 1.05, 1],
+                  opacity: [0.8, 1, 0.8]
+                }}
+                transition={{
+                  duration: 2.5,
+                  repeat: Infinity,
+                  ease: 'easeInOut'
+                }}
+              >
+                <AudioLines size={30} />
+
+                <span>
+                  VOICE
+                  <br />
+                  OF THE ARENA
+                </span>
+              </motion.div>
+
+
+              <div className="lab-art-index">
+                AA—AI / 01
+              </div>
+
+            </div>
+
+          </Reveal>
+
+        </section>
+
+
+        {/* ================= FINAL CTA ================= */}
+
+        <section className="final-cta">
+
+          <motion.div
+            className="cta-cross"
+            animate={{
+              rotate: 360
+            }}
+            transition={{
+              duration: 12,
+              repeat: Infinity,
+              ease: 'linear'
+            }}
+          >
+            ✳
+          </motion.div>
+
+
+          <Reveal>
+
+            <span className="section-kicker">
+              YOUR MOMENT STARTS HERE
+            </span>
+
+            <h2>
+              READY TO
+              <br />
+              <em>COMPETE?</em>
+            </h2>
+
+            <p>
+              Five squads. Twenty-five contenders. One arena.
+            </p>
+
+            <motion.div
+              whileHover={{
+                scale: 1.04,
+                y: -2
+              }}
+              whileTap={{
+                scale: 0.97
+              }}
+            >
+              <Link
+                to="/tournament"
+                className="button button-primary"
+              >
+                BUILD YOUR TEAM
+                <ArrowRight size={17} />
+              </Link>
+            </motion.div>
+
+          </Reveal>
+
+
+          <motion.div
+            className="cta-backdrop"
+            animate={{
+              x: ['-2%', '2%', '-2%']
+            }}
+            transition={{
+              duration: 8,
+              repeat: Infinity,
+              ease: 'easeInOut'
+            }}
+          >
+            ARENA
+          </motion.div>
+
+        </section>
+
+      </main>
+
+      <Footer />
+    </div>
+  )
+}
+
+
+/* =========================================================
+   FOOTER
+========================================================= */
+
+function Footer() {
+  return (
+    <footer className="footer">
+
+      <Brand compact />
+
+      <div className="footer-mid">
+        <span>TOURNAMENT // 2026</span>
+        <p>
+          Enter the arena. Make your mark.
+        </p>
+      </div>
+
+      <div className="footer-links">
+        <Link to="/">HOME</Link>
+        <a href="/#format">FORMAT</a>
+        <Link to="/tournament">TOURNAMENT</Link>
+      </div>
+
+      <span className="footer-copy">
+        © 2026 AMBIORA ARENA
+      </span>
+
+    </footer>
+  )
+}
+
+
+/* =========================================================
+   TOURNAMENT PAGE
+========================================================= */
+
+function TournamentPage({
+  data,
+  update,
+  notify
+}) {
+  const [playerForm, setPlayerForm] = useState({
+    name: '',
+    gamerTag: '',
+    email: '',
+    role: ''
+  })
+
   const [teamName, setTeamName] = useState('')
   const [teamColor, setTeamColor] = useState(accents[0])
   const [assignments, setAssignments] = useState({})
@@ -57,39 +1251,2004 @@ function TournamentPage({ data, update, notify }) {
   const [fixtureFilter, setFixtureFilter] = useState('ALL')
   const [view, setView] = useState('GRID')
   const [confirmReset, setConfirmReset] = useState(false)
+
   const location = useLocation()
-  const status = data.teams.length < 5 ? 'SETUP' : data.teams.some(t => t.players.length !== 5) ? 'INCOMPLETE' : 'READY'
-  const readyTeams = data.teams.filter(t => t.players.length === 5).length
-  const freePlayers = data.players.filter(p => !data.teams.some(t => t.players.includes(p.id)))
-  useEffect(() => { if (location.state?.scrollTo) setTimeout(() => document.getElementById(location.state.scrollTo)?.scrollIntoView({ behavior: 'smooth' }), 300) }, [location.state])
-  const registerPlayer = event => { event.preventDefault(); const next = {}; if (!playerForm.name.trim()) next.name='Player name is required.'; if (!playerForm.gamerTag.trim()) next.gamerTag='Gamer tag is required.'; if (!emailValid(playerForm.email)) next.email='Enter a valid email address.'; if (!playerForm.role) next.role='Choose a game role.'; if (data.players.some(p => p.gamerTag.toLowerCase() === playerForm.gamerTag.trim().toLowerCase())) next.gamerTag='That gamer tag is already registered.'; if (data.players.length >= 25) next.form='The 25 player roster is full.'; setErrors(next); if (Object.keys(next).length) return; update(d => { d.players.push({ ...playerForm, name: playerForm.name.trim(), gamerTag: playerForm.gamerTag.trim(), id: uid() }); return d }); setPlayerForm({ name:'', gamerTag:'', email:'', role:'' }); setErrors({}); notify('PLAYER REGISTERED — WELCOME TO THE ARENA') }
-  const createTeam = event => { event.preventDefault(); const trimmed = teamName.trim(); if (!trimmed) return setErrors({ team:'Team name is required.' }); if (data.teams.length >= 5) return setErrors({ team:'All five team slots are filled.' }); if (data.teams.some(t => t.name.toLowerCase() === trimmed.toLowerCase())) return setErrors({ team:'That team name is already in the bracket.' }); update(d => { d.teams.push({ id:uid(), name:trimmed, color:teamColor, players:[] }); return d }); setTeamName(''); setErrors({}); notify('SQUAD CREATED — THE ROSTER IS OPEN') }
-  const assignPlayer = teamId => { const playerId = assignments[teamId]; if (!playerId) return; update(d => { const team = d.teams.find(t => t.id === teamId); if (team && team.players.length < 5 && !d.teams.some(t => t.players.includes(playerId))) team.players.push(playerId); return d }); setAssignments(a => ({ ...a, [teamId]: '' })); notify('PLAYER ASSIGNED TO SQUAD') }
-  const loadDemo = () => { const names=['NOVA','VORTEX','PHANTOM','APEX','TITAN']; const tags=['VEX','RIFT','KAI','ZERO','NYX']; const demoPlayers=[]; const demoTeams=names.map((name,ti)=>{const teamId=uid();const ids=[];for(let pi=0;pi<5;pi++){const id=uid();ids.push(id);demoPlayers.push({id,name:`${['Ari','Mika','Dev','Ira','Sam'][pi]} ${['Shah','Reed','Das','Cole','Rao'][ti]}`,gamerTag:`${tags[pi]}${ti+1}`,email:`player${ti*5+pi+1}@arena.demo`,role:roles[(pi+ti)%roles.length]})}return{id:teamId,name,color:accents[ti],players:ids}}); const fixtures=generateFixtures(demoTeams);update(()=>({players:demoPlayers,teams:demoTeams,fixtures}));notify('DEMO TOURNAMENT LOADED — 5 SQUADS / 10 MATCHES') }
-  const makeFixtures = () => { try { const fixtures=generateFixtures(data.teams); update(d=>({...d,fixtures})); notify('10 MATCHUPS GENERATED — THE BATTLE SCHEDULE IS LIVE') } catch (err) { notify(err.message) } }
-  const reset = () => { clearTournament(); update(() => ({players:[],teams:[],fixtures:[]}));setConfirmReset(false);notify('TOURNAMENT RESET — READY FOR A FRESH START') }
-  const displayedFixtures = useMemo(() => data.fixtures.filter(f => fixtureFilter==='ALL'||f.status===fixtureFilter), [data.fixtures,fixtureFilter])
-  return <div className="tournament-page"><header className="tournament-nav"><Brand/><div className="tournament-nav-center"><span className="live-dot"/> TOURNAMENT CONTROL <b>·</b> 2026</div><Link to="/" className="back-link"><ArrowLeft size={15}/> BACK TO ARENA</Link></header><main className="control-main">
-    <section className="control-hero"><div><span className="section-kicker">AMBIORA ARENA <i>/</i> TOURNAMENT // 2026</span><h1>TOURNAMENT<br/><em>CONTROL</em></h1><p>Build your roster. Shape your bracket.<br/>Make every matchup count.</p></div><div className="control-mark"><div className="mark-circle"><Atom size={65}/><span>AA</span></div><small>ARENA SYSTEMS<br/>ONLINE · 2026</small></div></section>
-    <section className="summary-grid">{[['TEAMS',`${fmt(data.teams.length)} / 05`,<Users/>],['PLAYERS',`${fmt(data.players.length)} / 25`,<Gamepad2/>],['MATCHES',`${fmt(data.fixtures.length)} / 10`,<Swords/>],['STATUS',status,<CircleDot/>]].map(([label,value,icon])=><div className="summary-card" key={label}><div className="summary-label">{label}<span>{icon}</span></div><strong className={label==='STATUS'?'status-value':''}>{value}</strong>{label==='TEAMS'&&<div className="mini-progress"><i style={{width:`${data.teams.length*20}%`}}/></div>}{label==='PLAYERS'&&<div className="mini-progress"><i style={{width:`${data.players.length*4}%`}}/></div>}</div>)}</section>
-    <div className="admin-actions"><span><i className="live-dot"/> DEMO MODE <small>EXPLORE THE FULL EXPERIENCE</small></span><div><button className="text-action" onClick={loadDemo}><Zap size={14}/> LOAD DEMO TOURNAMENT</button><button className="text-action danger" onClick={()=>setConfirmReset(true)}><RotateCcw size={14}/> RESET TOURNAMENT</button></div></div>
-    <div className="management-grid"><section className="panel" id="player-registration"><div className="panel-heading"><div><span className="section-kicker">01 / ROSTER INTAKE</span><h2>PLAYER REGISTRATION</h2></div><span className="count-chip">{fmt(data.players.length)} <i>/ 25</i></span></div><form onSubmit={registerPlayer} className="form-grid" noValidate><label>PLAYER NAME<input value={playerForm.name} onChange={e=>setPlayerForm({...playerForm,name:e.target.value})} placeholder="e.g. Alex Morgan" maxLength="50" aria-invalid={!!errors.name}/>{errors.name&&<small className="field-error">{errors.name}</small>}</label><label>GAMER TAG<input value={playerForm.gamerTag} onChange={e=>setPlayerForm({...playerForm,gamerTag:e.target.value})} placeholder="YOUR IN-GAME ID" maxLength="30" aria-invalid={!!errors.gamerTag}/>{errors.gamerTag&&<small className="field-error">{errors.gamerTag}</small>}</label><label>EMAIL<input type="email" value={playerForm.email} onChange={e=>setPlayerForm({...playerForm,email:e.target.value})} placeholder="PLAYER@EMAIL.COM" maxLength="100" aria-invalid={!!errors.email}/>{errors.email&&<small className="field-error">{errors.email}</small>}</label><label>GAME ROLE<select value={playerForm.role} onChange={e=>setPlayerForm({...playerForm,role:e.target.value})} aria-invalid={!!errors.role}><option value="">SELECT A ROLE</option>{roles.map(r=><option key={r}>{r}</option>)}</select><ChevronDown className="select-chevron" size={15}/>{errors.role&&<small className="field-error">{errors.role}</small>}</label>{errors.form&&<small className="field-error form-wide">{errors.form}</small>}<button className="button button-primary form-wide" disabled={data.players.length>=25}><Plus size={16}/> REGISTER PLAYER <ArrowRight size={15}/></button></form></section>
-    <section className="panel team-create-panel"><div className="panel-heading"><div><span className="section-kicker">02 / BUILD YOUR SQUAD</span><h2>CREATE A TEAM</h2></div><span className="count-chip">{fmt(data.teams.length)} <i>/ 05</i></span></div><form onSubmit={createTeam} className="team-create-form"><label>TEAM NAME<input value={teamName} onChange={e=>setTeamName(e.target.value)} placeholder="ENTER TEAM NAME" maxLength="40" disabled={data.teams.length>=5}/>{errors.team&&<small className="field-error">{errors.team}</small>}</label><div className="color-row"><span>TEAM ACCENT</span><div>{accents.map(color=><button type="button" key={color} aria-label={`Choose ${color} accent`} className={`color-swatch ${teamColor===color?'selected':''}`} style={{'--swatch':color}} onClick={()=>setTeamColor(color)}/>)}</div></div><button className="button button-outline" disabled={data.teams.length>=5}><Plus size={15}/> CREATE TEAM</button>{data.teams.length>=5&&<p className="small-note">ALL TEAM SLOTS ARE FILLED</p>}</form></section></div>
-    <section className="roster-section"><div className="section-row"><div><span className="section-kicker">03 / SQUAD MANAGEMENT</span><h2>THE ROSTER <em>ROOM.</em></h2></div><p>{readyTeams} OF 5 SQUADS READY</p></div>{data.teams.length===0?<div className="empty-state"><div className="empty-icon"><Shield/></div><div><b>THE ROSTER IS WAITING.</b><p>Create a team and start building your five-player squad.</p></div><span>TEAM 01 — TEAM 05</span></div>:<div className="team-grid">{data.teams.map((team,index)=>{const members=team.players.map(id=>data.players.find(p=>p.id===id)).filter(Boolean);return <motion.article layout key={team.id} className="team-card" style={{'--team':team.color}}><div className="team-card-top"><span>TEAM {fmt(index+1)} <i>/ 05</i></span><span className={`team-status ${members.length===5?'ready':''}`}><i/>{members.length===5?'READY':'INCOMPLETE'}</span></div><div className="team-identity"><div className="team-avatar">{initials(team.name)}</div><div><h3>{team.name}</h3><small>{fmt(members.length)} / 05 PLAYERS</small></div><div className="team-sig">AA<span>·</span>{fmt(index+1)}</div></div><div className="member-list">{Array.from({length:5},(_,i)=>{const member=members[i];return <div className={`member-row ${member?'':'member-empty'}`} key={member?.id||i}><span className="member-number">{fmt(i+1)}</span>{member?<><b>{member.gamerTag}</b><span className="member-role">{member.role}</span></>:<span className="open-slot">ROSTER SLOT OPEN</span>}</div>})}</div><div className="assign-row"><select value={assignments[team.id]||''} onChange={e=>setAssignments({...assignments,[team.id]:e.target.value})} disabled={members.length>=5||freePlayers.length===0}><option value="">{members.length>=5?'ROSTER FULL':freePlayers.length?'ASSIGN A PLAYER':'NO AVAILABLE PLAYERS'}</option>{freePlayers.map(p=><option key={p.id} value={p.id}>{p.gamerTag} · {p.role}</option>)}</select><button onClick={()=>assignPlayer(team.id)} disabled={!assignments[team.id]||members.length>=5} aria-label={`Assign player to ${team.name}`}><ArrowRight size={16}/></button></div></motion.article>})}</div>}</section>
-    <section className="players-section"><div className="section-row"><div><span className="section-kicker">ROSTER DIRECTORY / {fmt(data.players.length)} REGISTERED</span><h2>PLAYER <em>POOL.</em></h2></div><span className="section-aside">UNASSIGNED PLAYERS AVAILABLE: {fmt(freePlayers.length)}</span></div>{data.players.length===0?<p className="pool-empty">No players registered. Add players above to begin assembling teams.</p>:<div className="player-table"><div className="player-table-head"><span>PLAYER</span><span>GAMER TAG</span><span>ROLE</span><span>SQUAD</span></div>{data.players.map((player,i)=>{const team=data.teams.find(t=>t.players.includes(player.id));return <div className="player-table-row" key={player.id}><span><i>{fmt(i+1)}</i>{player.name}</span><b>{player.gamerTag}</b><span>{player.role}</span><span className={team?'assigned':'unassigned'}>{team?.name||'UNASSIGNED'}</span></div>})}</div>}</section>
-    <section className="fixture-section"><div className="section-row"><div><span className="section-kicker">04 / ROUND ROBIN</span><h2>THE BATTLE <em>SCHEDULE.</em></h2></div><div className="fixture-tools"><div className="segmented">{['ALL','UPCOMING'].map(f=><button key={f} className={fixtureFilter===f?'active':''} onClick={()=>setFixtureFilter(f)}>{f}</button>)}</div><div className="segmented view-segment">{['GRID','LIST'].map(v=><button key={v} className={view===v?'active':''} onClick={()=>setView(v)}>{v}</button>)}</div></div></div><div className="fixture-generate"><div><span><b>{fmt(data.fixtures.length)}</b> / 10 MATCHES GENERATED</span><p>Every matchup. One shot at the top.</p></div><button className="button button-primary" onClick={makeFixtures} disabled={status!=='READY'}><Swords size={16}/>{data.fixtures.length?'REGENERATE FIXTURES':'GENERATE FIXTURES'} <ArrowRight size={15}/></button></div>{data.fixtures.length===0?<div className="fixture-empty"><div className="empty-icon"><Target/></div><div><b>{status==='READY'?'THE BRACKET IS READY.':'COMPLETE ALL 5 TEAM ROSTERS BEFORE ENTERING THE ARENA.'}</b><p>{status==='READY'?'Generate the round robin and reveal every matchup.':'Five teams. Five players each. Then the battle schedule unlocks.'}</p></div><LockIcon/></div>:<div className={view==='GRID'?'fixture-grid':'fixture-list'}>{displayedFixtures.map((f,i)=>{const a=data.teams.find(t=>t.id===f.team1),b=data.teams.find(t=>t.id===f.team2);if(!a||!b)return null;return <motion.article key={f.id} layout initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{delay:i*.035}} className="fixture-card"><div className="fixture-card-top"><span>MATCH {fmt(f.matchNumber)}</span><span className="upcoming"><i/> {f.status}</span></div><div className="fixture-competitors"><div><i style={{'--team':a.color}}>{initials(a.name)}</i><b>{a.name}</b></div><span>VS</span><div><i style={{'--team':b.color}}>{initials(b.name)}</i><b>{b.name}</b></div></div><div className="fixture-meta"><span>{f.arena}</span><span>{f.date}</span></div></motion.article>})}</div>}</section>
-    <AITeamLab teams={data.teams} data={data} notify={notify}/>
-    <div className="bottom-actions"><span><Check size={14}/> TOURNAMENT DATA SAVES AUTOMATICALLY ON THIS DEVICE</span><Link to="/" className="text-action"><ArrowLeft size={14}/> BACK TO ARENA</Link></div>
-  </main><Footer/>{confirmReset&&<Modal onClose={()=>setConfirmReset(false)} onConfirm={reset}/>}</div>
+
+  const status =
+    data.teams.length < 5
+      ? 'SETUP'
+      : data.teams.some(t => t.players.length !== 5)
+        ? 'INCOMPLETE'
+        : 'READY'
+
+  const readyTeams =
+    data.teams.filter(t => t.players.length === 5).length
+
+  const freePlayers =
+    data.players.filter(
+      p => !data.teams.some(t => t.players.includes(p.id))
+    )
+
+
+  useEffect(() => {
+    if (location.state?.scrollTo) {
+      setTimeout(() => {
+        document
+          .getElementById(location.state.scrollTo)
+          ?.scrollIntoView({
+            behavior: 'smooth'
+          })
+      }, 300)
+    }
+  }, [location.state])
+
+
+  /* ================= PLAYER REGISTRATION ================= */
+
+  const registerPlayer = event => {
+    event.preventDefault()
+
+    const next = {}
+
+    if (!playerForm.name.trim()) {
+      next.name = 'Player name is required.'
+    }
+
+    if (!playerForm.gamerTag.trim()) {
+      next.gamerTag = 'Gamer tag is required.'
+    }
+
+    if (!emailValid(playerForm.email)) {
+      next.email = 'Enter a valid email address.'
+    }
+
+    if (!playerForm.role) {
+      next.role = 'Choose a game role.'
+    }
+
+    if (
+      data.players.some(
+        p =>
+          p.gamerTag.toLowerCase() ===
+          playerForm.gamerTag.trim().toLowerCase()
+      )
+    ) {
+      next.gamerTag =
+        'That gamer tag is already registered.'
+    }
+
+    if (data.players.length >= 25) {
+      next.form =
+        'The 25 player roster is full.'
+    }
+
+    setErrors(next)
+
+    if (Object.keys(next).length) {
+      return
+    }
+
+    update(d => {
+      d.players.push({
+        ...playerForm,
+        name: playerForm.name.trim(),
+        gamerTag: playerForm.gamerTag.trim(),
+        id: uid()
+      })
+
+      return d
+    })
+
+    setPlayerForm({
+      name: '',
+      gamerTag: '',
+      email: '',
+      role: ''
+    })
+
+    setErrors({})
+
+    notify(
+      'PLAYER REGISTERED — WELCOME TO THE ARENA'
+    )
+  }
+
+
+  /* ================= CREATE TEAM ================= */
+
+  const createTeam = event => {
+    event.preventDefault()
+
+    const trimmed = teamName.trim()
+
+    if (!trimmed) {
+      return setErrors({
+        team: 'Team name is required.'
+      })
+    }
+
+    if (data.teams.length >= 5) {
+      return setErrors({
+        team: 'All five team slots are filled.'
+      })
+    }
+
+    if (
+      data.teams.some(
+        t =>
+          t.name.toLowerCase() ===
+          trimmed.toLowerCase()
+      )
+    ) {
+      return setErrors({
+        team:
+          'That team name is already in the bracket.'
+      })
+    }
+
+    update(d => {
+      d.teams.push({
+        id: uid(),
+        name: trimmed,
+        color: teamColor,
+        players: []
+      })
+
+      return d
+    })
+
+    setTeamName('')
+    setErrors({})
+
+    notify(
+      'SQUAD CREATED — THE ROSTER IS OPEN'
+    )
+  }
+
+
+  /* ================= ASSIGN PLAYER ================= */
+
+  const assignPlayer = teamId => {
+    const playerId = assignments[teamId]
+
+    if (!playerId) return
+
+    update(d => {
+      const team =
+        d.teams.find(t => t.id === teamId)
+
+      if (
+        team &&
+        team.players.length < 5 &&
+        !d.teams.some(t =>
+          t.players.includes(playerId)
+        )
+      ) {
+        team.players.push(playerId)
+      }
+
+      return d
+    })
+
+    setAssignments(a => ({
+      ...a,
+      [teamId]: ''
+    }))
+
+    notify(
+      'PLAYER ASSIGNED TO SQUAD'
+    )
+  }
+
+
+  /* ================= DEMO ================= */
+
+  const loadDemo = () => {
+    const names = [
+      'NOVA',
+      'VORTEX',
+      'PHANTOM',
+      'APEX',
+      'TITAN'
+    ]
+
+    const tags = [
+      'VEX',
+      'RIFT',
+      'KAI',
+      'ZERO',
+      'NYX'
+    ]
+
+    const demoPlayers = []
+
+    const demoTeams = names.map(
+      (name, ti) => {
+        const teamId = uid()
+        const ids = []
+
+        for (let pi = 0; pi < 5; pi++) {
+          const id = uid()
+
+          ids.push(id)
+
+          demoPlayers.push({
+            id,
+            name:
+              `${['Ari', 'Mika', 'Dev', 'Ira', 'Sam'][pi]} ${[
+                'Shah',
+                'Reed',
+                'Das',
+                'Cole',
+                'Rao'
+              ][ti]}`,
+            gamerTag:
+              `${tags[pi]}${ti + 1}`,
+            email:
+              `player${ti * 5 + pi + 1}@arena.demo`,
+            role:
+              roles[(pi + ti) % roles.length]
+          })
+        }
+
+        return {
+          id: teamId,
+          name,
+          color: accents[ti],
+          players: ids
+        }
+      }
+    )
+
+    const fixtures =
+      generateFixtures(demoTeams)
+
+    update(() => ({
+      players: demoPlayers,
+      teams: demoTeams,
+      fixtures
+    }))
+
+    notify(
+      'DEMO TOURNAMENT LOADED — 5 SQUADS / 10 MATCHES'
+    )
+  }
+
+
+  /* ================= FIXTURES ================= */
+
+  const makeFixtures = () => {
+    try {
+      const fixtures =
+        generateFixtures(data.teams)
+
+      update(d => ({
+        ...d,
+        fixtures
+      }))
+
+      notify(
+        '10 MATCHUPS GENERATED — THE BATTLE SCHEDULE IS LIVE'
+      )
+    } catch (err) {
+      notify(err.message)
+    }
+  }
+
+
+  /* ================= RESET ================= */
+
+  const reset = () => {
+    clearTournament()
+
+    update(() => ({
+      players: [],
+      teams: [],
+      fixtures: []
+    }))
+
+    setConfirmReset(false)
+
+    notify(
+      'TOURNAMENT RESET — READY FOR A FRESH START'
+    )
+  }
+
+
+  const displayedFixtures =
+    useMemo(
+      () =>
+        data.fixtures.filter(
+          f =>
+            fixtureFilter === 'ALL' ||
+            f.status === fixtureFilter
+        ),
+      [
+        data.fixtures,
+        fixtureFilter
+      ]
+    )
+
+
+  return (
+    <div className="tournament-page">
+
+      {/* ================= NAV ================= */}
+
+      <header className="tournament-nav">
+
+        <Brand />
+
+        <div className="tournament-nav-center">
+          <span className="live-dot" />
+          TOURNAMENT CONTROL
+          <b>·</b>
+          2026
+        </div>
+
+        <Link
+          to="/"
+          className="back-link"
+        >
+          <ArrowLeft size={15} />
+          BACK TO ARENA
+        </Link>
+
+      </header>
+
+
+      <main className="control-main">
+
+        {/* ================= HERO ================= */}
+
+        <section className="control-hero">
+
+          <div>
+
+            <span className="section-kicker">
+              AMBIORA ARENA
+              <i>/</i>
+              TOURNAMENT // 2026
+            </span>
+
+            <h1>
+              TOURNAMENT
+              <br />
+              <em>CONTROL</em>
+            </h1>
+
+            <p>
+              Build your roster. Shape your bracket.
+              <br />
+              Make every matchup count.
+            </p>
+
+          </div>
+
+          <div className="control-mark">
+
+            <div className="mark-circle">
+              <Atom size={65} />
+              <span>AA</span>
+            </div>
+
+            <small>
+              ARENA SYSTEMS
+              <br />
+              ONLINE · 2026
+            </small>
+
+          </div>
+
+        </section>
+
+
+        {/* ================= SUMMARY ================= */}
+
+        <section className="summary-grid">
+
+          {[
+            ['TEAMS', `${fmt(data.teams.length)} / 05`, <Users />],
+            ['PLAYERS', `${fmt(data.players.length)} / 25`, <Gamepad2 />],
+            ['MATCHES', `${fmt(data.fixtures.length)} / 10`, <Swords />],
+            ['STATUS', status, <CircleDot />]
+          ].map(
+            ([label, value, icon]) => (
+
+              <div
+                className="summary-card"
+                key={label}
+              >
+
+                <div className="summary-label">
+                  {label}
+                  <span>{icon}</span>
+                </div>
+
+                <strong
+                  className={
+                    label === 'STATUS'
+                      ? 'status-value'
+                      : ''
+                  }
+                >
+                  {value}
+                </strong>
+
+                {label === 'TEAMS' && (
+                  <div className="mini-progress">
+                    <i
+                      style={{
+                        width:
+                          `${data.teams.length * 20}%`
+                      }}
+                    />
+                  </div>
+                )}
+
+                {label === 'PLAYERS' && (
+                  <div className="mini-progress">
+                    <i
+                      style={{
+                        width:
+                          `${data.players.length * 4}%`
+                      }}
+                    />
+                  </div>
+                )}
+
+              </div>
+
+            )
+          )}
+
+        </section>
+
+
+        {/* ================= ADMIN ================= */}
+
+        <div className="admin-actions">
+
+          <span>
+            <i className="live-dot" />
+            DEMO MODE
+            <small>
+              EXPLORE THE FULL EXPERIENCE
+            </small>
+          </span>
+
+          <div>
+
+            <button
+              className="text-action"
+              onClick={loadDemo}
+            >
+              <Zap size={14} />
+              LOAD DEMO TOURNAMENT
+            </button>
+
+            <button
+              className="text-action danger"
+              onClick={() =>
+                setConfirmReset(true)
+              }
+            >
+              <RotateCcw size={14} />
+              RESET TOURNAMENT
+            </button>
+
+          </div>
+
+        </div>
+
+
+        {/* ================= MANAGEMENT ================= */}
+
+        <div className="management-grid">
+
+          {/* PLAYER REGISTRATION */}
+
+          <section
+            className="panel"
+            id="player-registration"
+          >
+
+            <div className="panel-heading">
+
+              <div>
+
+                <span className="section-kicker">
+                  01 / ROSTER INTAKE
+                </span>
+
+                <h2>
+                  PLAYER REGISTRATION
+                </h2>
+
+              </div>
+
+              <span className="count-chip">
+                {fmt(data.players.length)}
+                <i>/ 25</i>
+              </span>
+
+            </div>
+
+
+            <form
+              onSubmit={registerPlayer}
+              className="form-grid"
+              noValidate
+            >
+
+              <label>
+                PLAYER NAME
+
+                <input
+                  value={playerForm.name}
+                  onChange={e =>
+                    setPlayerForm({
+                      ...playerForm,
+                      name: e.target.value
+                    })
+                  }
+                  placeholder="e.g. Alex Morgan"
+                  maxLength="50"
+                  aria-invalid={!!errors.name}
+                />
+
+                {errors.name && (
+                  <small className="field-error">
+                    {errors.name}
+                  </small>
+                )}
+              </label>
+
+
+              <label>
+                GAMER TAG
+
+                <input
+                  value={playerForm.gamerTag}
+                  onChange={e =>
+                    setPlayerForm({
+                      ...playerForm,
+                      gamerTag: e.target.value
+                    })
+                  }
+                  placeholder="YOUR IN-GAME ID"
+                  maxLength="30"
+                  aria-invalid={!!errors.gamerTag}
+                />
+
+                {errors.gamerTag && (
+                  <small className="field-error">
+                    {errors.gamerTag}
+                  </small>
+                )}
+              </label>
+
+
+              <label>
+                EMAIL
+
+                <input
+                  type="email"
+                  value={playerForm.email}
+                  onChange={e =>
+                    setPlayerForm({
+                      ...playerForm,
+                      email: e.target.value
+                    })
+                  }
+                  placeholder="PLAYER@EMAIL.COM"
+                  maxLength="100"
+                  aria-invalid={!!errors.email}
+                />
+
+                {errors.email && (
+                  <small className="field-error">
+                    {errors.email}
+                  </small>
+                )}
+              </label>
+
+
+              <label>
+                GAME ROLE
+
+                <select
+                  value={playerForm.role}
+                  onChange={e =>
+                    setPlayerForm({
+                      ...playerForm,
+                      role: e.target.value
+                    })
+                  }
+                  aria-invalid={!!errors.role}
+                >
+                  <option value="">
+                    SELECT A ROLE
+                  </option>
+
+                  {roles.map(role => (
+                    <option key={role}>
+                      {role}
+                    </option>
+                  ))}
+                </select>
+
+                <ChevronDown
+                  className="select-chevron"
+                  size={15}
+                />
+
+                {errors.role && (
+                  <small className="field-error">
+                    {errors.role}
+                  </small>
+                )}
+
+              </label>
+
+
+              {errors.form && (
+                <small className="field-error form-wide">
+                  {errors.form}
+                </small>
+              )}
+
+
+              <button
+                className="button button-primary form-wide"
+                disabled={
+                  data.players.length >= 25
+                }
+              >
+                <Plus size={16} />
+                REGISTER PLAYER
+                <ArrowRight size={15} />
+              </button>
+
+            </form>
+
+          </section>
+
+
+          {/* TEAM CREATE */}
+
+          <section className="panel team-create-panel">
+
+            <div className="panel-heading">
+
+              <div>
+
+                <span className="section-kicker">
+                  02 / BUILD YOUR SQUAD
+                </span>
+
+                <h2>
+                  CREATE A TEAM
+                </h2>
+
+              </div>
+
+              <span className="count-chip">
+                {fmt(data.teams.length)}
+                <i>/ 05</i>
+              </span>
+
+            </div>
+
+
+            <form
+              onSubmit={createTeam}
+              className="team-create-form"
+            >
+
+              <label>
+                TEAM NAME
+
+                <input
+                  value={teamName}
+                  onChange={e =>
+                    setTeamName(e.target.value)
+                  }
+                  placeholder="ENTER TEAM NAME"
+                  maxLength="40"
+                  disabled={
+                    data.teams.length >= 5
+                  }
+                />
+
+                {errors.team && (
+                  <small className="field-error">
+                    {errors.team}
+                  </small>
+                )}
+
+              </label>
+
+
+              <div className="color-row">
+
+                <span>
+                  TEAM ACCENT
+                </span>
+
+                <div>
+
+                  {accents.map(color => (
+
+                    <button
+                      type="button"
+                      key={color}
+                      aria-label={`Choose ${color} accent`}
+                      className={`color-swatch ${
+                        teamColor === color
+                          ? 'selected'
+                          : ''
+                      }`}
+                      style={{
+                        '--swatch': color
+                      }}
+                      onClick={() =>
+                        setTeamColor(color)
+                      }
+                    />
+
+                  ))}
+
+                </div>
+
+              </div>
+
+
+              <button
+                className="button button-outline"
+                disabled={
+                  data.teams.length >= 5
+                }
+              >
+                <Plus size={15} />
+                CREATE TEAM
+              </button>
+
+
+              {data.teams.length >= 5 && (
+                <p className="small-note">
+                  ALL TEAM SLOTS ARE FILLED
+                </p>
+              )}
+
+            </form>
+
+          </section>
+
+        </div>
+
+
+        {/* ================= ROSTER ROOM ================= */}
+
+        <section className="roster-section">
+
+          <div className="section-row">
+
+            <div>
+
+              <span className="section-kicker">
+                03 / SQUAD MANAGEMENT
+              </span>
+
+              <h2>
+                THE ROSTER
+                <em> ROOM.</em>
+              </h2>
+
+            </div>
+
+            <p>
+              {readyTeams} OF 5 SQUADS READY
+            </p>
+
+          </div>
+
+
+          {data.teams.length === 0 ? (
+
+            <div className="empty-state">
+
+              <div className="empty-icon">
+                <Shield />
+              </div>
+
+              <div>
+                <b>
+                  THE ROSTER IS WAITING.
+                </b>
+
+                <p>
+                  Create a team and start building
+                  your five-player squad.
+                </p>
+              </div>
+
+              <span>
+                TEAM 01 — TEAM 05
+              </span>
+
+            </div>
+
+          ) : (
+
+            <div className="team-grid">
+
+              {data.teams.map(
+                (team, index) => {
+
+                  const members =
+                    team.players
+                      .map(id =>
+                        data.players.find(
+                          p => p.id === id
+                        )
+                      )
+                      .filter(Boolean)
+
+                  return (
+                    <motion.article
+                      layout
+                      key={team.id}
+                      className="team-card"
+                      style={{
+                        '--team': team.color
+                      }}
+                    >
+
+                      <div className="team-card-top">
+
+                        <span>
+                          TEAM {fmt(index + 1)}
+                          <i>/ 05</i>
+                        </span>
+
+                        <span
+                          className={`team-status ${
+                            members.length === 5
+                              ? 'ready'
+                              : ''
+                          }`}
+                        >
+                          <i />
+
+                          {members.length === 5
+                            ? 'READY'
+                            : 'INCOMPLETE'}
+                        </span>
+
+                      </div>
+
+
+                      <div className="team-identity">
+
+                        <div className="team-avatar">
+                          {initials(team.name)}
+                        </div>
+
+                        <div>
+
+                          <h3>
+                            {team.name}
+                          </h3>
+
+                          <small>
+                            {fmt(members.length)}
+                            {' / 05 PLAYERS'}
+                          </small>
+
+                        </div>
+
+                        <div className="team-sig">
+                          AA
+                          <span>·</span>
+                          {fmt(index + 1)}
+                        </div>
+
+                      </div>
+
+
+                      <div className="member-list">
+
+                        {Array.from(
+                          { length: 5 },
+                          (_, i) => {
+
+                            const member =
+                              members[i]
+
+                            return (
+                              <div
+                                className={`member-row ${
+                                  member
+                                    ? ''
+                                    : 'member-empty'
+                                }`}
+                                key={
+                                  member?.id || i
+                                }
+                              >
+
+                                <span className="member-number">
+                                  {fmt(i + 1)}
+                                </span>
+
+                                {member ? (
+                                  <>
+                                    <b>
+                                      {member.gamerTag}
+                                    </b>
+
+                                    <span className="member-role">
+                                      {member.role}
+                                    </span>
+                                  </>
+                                ) : (
+                                  <span className="open-slot">
+                                    ROSTER SLOT OPEN
+                                  </span>
+                                )}
+
+                              </div>
+                            )
+                          }
+                        )}
+
+                      </div>
+
+
+                      <div className="assign-row">
+
+                        <select
+                          value={
+                            assignments[team.id] || ''
+                          }
+                          onChange={e =>
+                            setAssignments({
+                              ...assignments,
+                              [team.id]:
+                                e.target.value
+                            })
+                          }
+                          disabled={
+                            members.length >= 5 ||
+                            freePlayers.length === 0
+                          }
+                        >
+
+                          <option value="">
+                            {members.length >= 5
+                              ? 'ROSTER FULL'
+                              : freePlayers.length
+                                ? 'ASSIGN A PLAYER'
+                                : 'NO AVAILABLE PLAYERS'}
+                          </option>
+
+                          {freePlayers.map(player => (
+                            <option
+                              key={player.id}
+                              value={player.id}
+                            >
+                              {player.gamerTag}
+                              {' · '}
+                              {player.role}
+                            </option>
+                          ))}
+
+                        </select>
+
+                        <button
+                          onClick={() =>
+                            assignPlayer(team.id)
+                          }
+                          disabled={
+                            !assignments[team.id] ||
+                            members.length >= 5
+                          }
+                          aria-label={`Assign player to ${team.name}`}
+                        >
+                          <ArrowRight size={16} />
+                        </button>
+
+                      </div>
+
+                    </motion.article>
+                  )
+                }
+              )}
+
+            </div>
+
+          )}
+
+        </section>
+
+
+        {/* ================= PLAYER POOL ================= */}
+
+        <section className="players-section">
+
+          <div className="section-row">
+
+            <div>
+
+              <span className="section-kicker">
+                ROSTER DIRECTORY /
+                {' '}
+                {fmt(data.players.length)}
+                {' '}
+                REGISTERED
+              </span>
+
+              <h2>
+                PLAYER
+                <em> POOL.</em>
+              </h2>
+
+            </div>
+
+            <span className="section-aside">
+              UNASSIGNED PLAYERS AVAILABLE:
+              {' '}
+              {fmt(freePlayers.length)}
+            </span>
+
+          </div>
+
+
+          {data.players.length === 0 ? (
+
+            <p className="pool-empty">
+              No players registered.
+              Add players above to begin
+              assembling teams.
+            </p>
+
+          ) : (
+
+            <div className="player-table">
+
+              <div className="player-table-head">
+                <span>PLAYER</span>
+                <span>GAMER TAG</span>
+                <span>ROLE</span>
+                <span>SQUAD</span>
+              </div>
+
+
+              {data.players.map(
+                (player, i) => {
+
+                  const team =
+                    data.teams.find(
+                      t =>
+                        t.players.includes(
+                          player.id
+                        )
+                    )
+
+                  return (
+                    <div
+                      className="player-table-row"
+                      key={player.id}
+                    >
+
+                      <span>
+                        <i>{fmt(i + 1)}</i>
+                        {player.name}
+                      </span>
+
+                      <b>
+                        {player.gamerTag}
+                      </b>
+
+                      <span>
+                        {player.role}
+                      </span>
+
+                      <span
+                        className={
+                          team
+                            ? 'assigned'
+                            : 'unassigned'
+                        }
+                      >
+                        {team?.name ||
+                          'UNASSIGNED'}
+                      </span>
+
+                    </div>
+                  )
+                }
+              )}
+
+            </div>
+
+          )}
+
+        </section>
+
+
+        {/* ================= FIXTURES ================= */}
+
+        <section className="fixture-section">
+
+          <div className="section-row">
+
+            <div>
+
+              <span className="section-kicker">
+                04 / ROUND ROBIN
+              </span>
+
+              <h2>
+                THE BATTLE
+                <em> SCHEDULE.</em>
+              </h2>
+
+            </div>
+
+
+            <div className="fixture-tools">
+
+              <div className="segmented">
+
+                {['ALL', 'UPCOMING'].map(
+                  filter => (
+
+                    <button
+                      key={filter}
+                      className={
+                        fixtureFilter === filter
+                          ? 'active'
+                          : ''
+                      }
+                      onClick={() =>
+                        setFixtureFilter(
+                          filter
+                        )
+                      }
+                    >
+                      {filter}
+                    </button>
+
+                  )
+                )}
+
+              </div>
+
+
+              <div className="segmented view-segment">
+
+                {['GRID', 'LIST'].map(
+                  option => (
+
+                    <button
+                      key={option}
+                      className={
+                        view === option
+                          ? 'active'
+                          : ''
+                      }
+                      onClick={() =>
+                        setView(option)
+                      }
+                    >
+                      {option}
+                    </button>
+
+                  )
+                )}
+
+              </div>
+
+            </div>
+
+          </div>
+
+
+          <div className="fixture-generate">
+
+            <div>
+
+              <span>
+                <b>
+                  {fmt(data.fixtures.length)}
+                </b>
+                {' / 10 MATCHES GENERATED'}
+              </span>
+
+              <p>
+                Every matchup.
+                One shot at the top.
+              </p>
+
+            </div>
+
+            <button
+              className="button button-primary"
+              onClick={makeFixtures}
+              disabled={status !== 'READY'}
+            >
+              <Swords size={16} />
+
+              {data.fixtures.length
+                ? 'REGENERATE FIXTURES'
+                : 'GENERATE FIXTURES'}
+
+              <ArrowRight size={15} />
+            </button>
+
+          </div>
+
+
+          {data.fixtures.length === 0 ? (
+
+            <div className="fixture-empty">
+
+              <div className="empty-icon">
+                <Target />
+              </div>
+
+              <div>
+
+                <b>
+                  {status === 'READY'
+                    ? 'THE BRACKET IS READY.'
+                    : 'COMPLETE ALL 5 TEAM ROSTERS BEFORE ENTERING THE ARENA.'}
+                </b>
+
+                <p>
+                  {status === 'READY'
+                    ? 'Generate the round robin and reveal every matchup.'
+                    : 'Five teams. Five players each. Then the battle schedule unlocks.'}
+                </p>
+
+              </div>
+
+              <LockIcon />
+
+            </div>
+
+          ) : (
+
+            <div
+              className={
+                view === 'GRID'
+                  ? 'fixture-grid'
+                  : 'fixture-list'
+              }
+            >
+
+              {displayedFixtures.map(
+                (fixture, i) => {
+
+                  const teamA =
+                    data.teams.find(
+                      t =>
+                        t.id ===
+                        fixture.team1
+                    )
+
+                  const teamB =
+                    data.teams.find(
+                      t =>
+                        t.id ===
+                        fixture.team2
+                    )
+
+                  if (!teamA || !teamB) {
+                    return null
+                  }
+
+                  return (
+                    <motion.article
+                      key={fixture.id}
+                      layout
+                      initial={{
+                        opacity: 0,
+                        y: 10
+                      }}
+                      animate={{
+                        opacity: 1,
+                        y: 0
+                      }}
+                      transition={{
+                        delay: i * 0.035
+                      }}
+                      className="fixture-card"
+                    >
+
+                      <div className="fixture-card-top">
+
+                        <span>
+                          MATCH
+                          {' '}
+                          {fmt(
+                            fixture.matchNumber
+                          )}
+                        </span>
+
+                        <span className="upcoming">
+                          <i />
+                          {' '}
+                          {fixture.status}
+                        </span>
+
+                      </div>
+
+
+                      <div className="fixture-competitors">
+
+                        <div>
+
+                          <i
+                            style={{
+                              '--team':
+                                teamA.color
+                            }}
+                          >
+                            {initials(
+                              teamA.name
+                            )}
+                          </i>
+
+                          <b>
+                            {teamA.name}
+                          </b>
+
+                        </div>
+
+                        <span>
+                          VS
+                        </span>
+
+                        <div>
+
+                          <i
+                            style={{
+                              '--team':
+                                teamB.color
+                            }}
+                          >
+                            {initials(
+                              teamB.name
+                            )}
+                          </i>
+
+                          <b>
+                            {teamB.name}
+                          </b>
+
+                        </div>
+
+                      </div>
+
+
+                      <div className="fixture-meta">
+
+                        <span>
+                          {fixture.arena}
+                        </span>
+
+                        <span>
+                          {fixture.date}
+                        </span>
+
+                      </div>
+
+                    </motion.article>
+                  )
+                }
+              )}
+
+            </div>
+
+          )}
+
+        </section>
+
+
+        {/* ================= AI LAB ================= */}
+
+        <AITeamLab
+          teams={data.teams}
+          data={data}
+          notify={notify}
+        />
+
+
+        {/* ================= BOTTOM ================= */}
+
+        <div className="bottom-actions">
+
+          <span>
+            <Check size={14} />
+            TOURNAMENT DATA SAVES AUTOMATICALLY
+            ON THIS DEVICE
+          </span>
+
+          <Link
+            to="/"
+            className="text-action"
+          >
+            <ArrowLeft size={14} />
+            BACK TO ARENA
+          </Link>
+
+        </div>
+
+      </main>
+
+
+      <Footer />
+
+
+      {confirmReset && (
+        <Modal
+          onClose={() =>
+            setConfirmReset(false)
+          }
+          onConfirm={reset}
+        />
+      )}
+
+    </div>
+  )
 }
-function LockIcon(){return <div className="lock-symbol"><CircleDot size={24}/></div>}
-function AITeamLab({ teams, data, notify }) {
-  const [teamId,setTeamId]=useState(''); const [tone,setTone]=useState('CINEMATIC'); const [hype,setHype]=useState(''); const [loading,setLoading]=useState(false); const [error,setError]=useState(''); const [copied,setCopied]=useState(false)
-  const selected=teams.find(team=>team.id===teamId)
-  const generate=async()=>{if(!selected)return setError('Create a team before entering the AI Team Lab.');setLoading(true);setError('');setHype('');try{const members=selected.players.map(id=>data.players.find(p=>p.id===id)).filter(Boolean).map(({name,gamerTag,role})=>({name,gamerTag,role}));const response=await fetch('/api/generate-hype',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({teamName:selected.name,members,tone})});const result=await response.json().catch(()=>({}));if(!response.ok)throw new Error(result.error||'Couldn’t reach the AI arena. Try again.');if(!result.hype)throw new Error('Couldn’t reach the AI arena. Try again.');setHype(result.hype)}catch(err){setError(err.message==='AI Team Lab is not configured yet.'?err.message:'Couldn’t reach the AI arena. Try again.')}finally{setLoading(false)}}
-  const copy=async()=>{try{await navigator.clipboard.writeText(hype);setCopied(true);notify('HYPE COPIED TO CLIPBOARD');setTimeout(()=>setCopied(false),1800)}catch{setError('Clipboard access is unavailable in this browser.')}}
-  return <section className="ai-lab" id="ai-lab"><div className="ai-lab-head"><div><span className="section-kicker"><Sparkles size={13}/> 05 / INTELLIGENCE SYSTEM</span><h2>AI TEAM <em>LAB.</em></h2><p>GIVE YOUR SQUAD A VOICE.</p></div><div className="ai-status"><span className="pulse-dot"/> GENERATIVE SYSTEM <b>READY</b></div></div><div className="ai-lab-body"><div className="ai-controls"><p>Generate a cinematic esports introduction for your team using AI.</p><label>TEAM<select value={teamId} onChange={e=>{setTeamId(e.target.value);setError('')}}><option value="">SELECT YOUR SQUAD</option>{teams.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select><ChevronDown size={15}/></label><div className="tone-field"><span>TONE</span><div>{tones.map(t=><button key={t} onClick={()=>setTone(t)} className={tone===t?'selected':''}>{t}</button>)}</div></div><button className="button button-primary generate-button" onClick={generate} disabled={loading}>{loading?<><span className="spinner"/> THE ARENA IS LISTENING...</>:<><Sparkles size={16}/> GENERATE HYPE <ArrowRight size={15}/></>}</button>{error&&<p className="ai-error" role="alert">{error}</p>}<small className="ai-note"><Shield size={13}/> API KEY SECURED SERVER-SIDE</small></div><div className="ai-output"><div className="output-top"><span><AudioLines size={15}/> TRANSMISSION / {hype?'RECEIVED':'STANDBY'}</span><span>AA—AI</span></div><AnimatePresence mode="wait">{hype?<motion.div key={hype} className="hype-result" initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} exit={{opacity:0}}><div className="quote-mark">“</div><p>{hype}</p><div className="output-actions"><button onClick={generate} disabled={loading}><RotateCcw size={13}/> GENERATE AGAIN</button><button onClick={copy}><Copy size={13}/> {copied?'COPIED':'COPY HYPE'}</button></div></motion.div>:<motion.div key="empty" className="output-placeholder" initial={{opacity:0}} animate={{opacity:1}}><div className="sound-wave">{Array.from({length:19},(_,i)=><i key={i} style={{'--i':i}}/>)}</div><b>{loading?'THE ARENA IS LISTENING...':'YOUR SQUAD. YOUR STORY.'}</b><span>{loading?'GENERATING TRANSMISSION':'SELECT YOUR TEAM TO BEGIN'}</span></motion.div>}</AnimatePresence></div></div></section>
+
+
+/* =========================================================
+   LOCK ICON
+========================================================= */
+
+function LockIcon() {
+  return (
+    <div className="lock-symbol">
+      <CircleDot size={24} />
+    </div>
+  )
 }
-function Modal({onClose,onConfirm}) { return <div className="modal-backdrop" role="presentation" onMouseDown={e=>e.target===e.currentTarget&&onClose()}><motion.div className="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="reset-title" initial={{opacity:0,y:15,scale:.97}} animate={{opacity:1,y:0,scale:1}}><button className="modal-close" onClick={onClose} aria-label="Close"><X size={18}/></button><div className="modal-icon"><RotateCcw/></div><span className="section-kicker">RESET CONFIRMATION</span><h2 id="reset-title">CLEAR THE<br/><em>ARENA?</em></h2><p>This removes all players, teams and generated fixtures from this device. This action can’t be undone.</p><div className="modal-actions"><button className="button button-quiet" onClick={onClose}>KEEP TOURNAMENT</button><button className="button button-danger" onClick={onConfirm}>RESET EVERYTHING</button></div></motion.div></div> }
+
+
+/* =========================================================
+   AI TEAM LAB
+========================================================= */
+
+function AITeamLab({
+  teams,
+  data,
+  notify
+}) {
+  const [teamId, setTeamId] = useState('')
+  const [tone, setTone] = useState('CINEMATIC')
+  const [hype, setHype] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [copied, setCopied] = useState(false)
+
+  const selected =
+    teams.find(team => team.id === teamId)
+
+
+  const generate = async () => {
+
+    if (!selected) {
+      return setError(
+        'Create a team before entering the AI Team Lab.'
+      )
+    }
+
+    setLoading(true)
+    setError('')
+    setHype('')
+
+    try {
+
+      const members =
+        selected.players
+          .map(id =>
+            data.players.find(
+              p => p.id === id
+            )
+          )
+          .filter(Boolean)
+          .map(
+            ({
+              name,
+              gamerTag,
+              role
+            }) => ({
+              name,
+              gamerTag,
+              role
+            })
+          )
+
+
+      const response =
+        await fetch(
+          '/api/generate-hype',
+          {
+            method: 'POST',
+
+            headers: {
+              'Content-Type':
+                'application/json'
+            },
+
+            body: JSON.stringify({
+              teamName:
+                selected.name,
+              members,
+              tone
+            })
+          }
+        )
+
+
+      const result =
+        await response
+          .json()
+          .catch(() => ({}))
+
+
+      if (!response.ok) {
+        throw new Error(
+          result.error ||
+          'Couldn’t reach the AI arena. Try again.'
+        )
+      }
+
+
+      if (!result.hype) {
+        throw new Error(
+          'Couldn’t reach the AI arena. Try again.'
+        )
+      }
+
+
+      setHype(result.hype)
+
+    } catch (err) {
+
+      setError(
+        err.message ===
+          'AI Team Lab is not configured yet.'
+          ? err.message
+          : 'Couldn’t reach the AI arena. Try again.'
+      )
+
+    } finally {
+      setLoading(false)
+    }
+  }
+
+
+  const copy = async () => {
+
+    try {
+
+      await navigator.clipboard.writeText(
+        hype
+      )
+
+      setCopied(true)
+
+      notify(
+        'HYPE COPIED TO CLIPBOARD'
+      )
+
+      setTimeout(
+        () => setCopied(false),
+        1800
+      )
+
+    } catch {
+
+      setError(
+        'Clipboard access is unavailable in this browser.'
+      )
+    }
+  }
+
+
+  return (
+    <section
+      className="ai-lab"
+      id="ai-lab"
+    >
+
+      <div className="ai-lab-head">
+
+        <div>
+
+          <span className="section-kicker">
+            <Sparkles size={13} />
+            05 / INTELLIGENCE SYSTEM
+          </span>
+
+          <h2>
+            AI TEAM
+            <em> LAB.</em>
+          </h2>
+
+          <p>
+            GIVE YOUR SQUAD A VOICE.
+          </p>
+
+        </div>
+
+
+        <div className="ai-status">
+
+          <span className="pulse-dot" />
+
+          GENERATIVE SYSTEM
+
+          <b>
+            READY
+          </b>
+
+        </div>
+
+      </div>
+
+
+      <div className="ai-lab-body">
+
+        <div className="ai-controls">
+
+          <p>
+            Generate a cinematic esports
+            introduction for your team using AI.
+          </p>
+
+
+          <label>
+
+            TEAM
+
+            <select
+              value={teamId}
+              onChange={e => {
+                setTeamId(e.target.value)
+                setError('')
+              }}
+            >
+
+              <option value="">
+                SELECT YOUR SQUAD
+              </option>
+
+              {teams.map(team => (
+                <option
+                  key={team.id}
+                  value={team.id}
+                >
+                  {team.name}
+                </option>
+              ))}
+
+            </select>
+
+            <ChevronDown size={15} />
+
+          </label>
+
+
+          <div className="tone-field">
+
+            <span>
+              TONE
+            </span>
+
+            <div>
+
+              {tones.map(
+                toneOption => (
+
+                  <button
+                    key={toneOption}
+                    onClick={() =>
+                      setTone(
+                        toneOption
+                      )
+                    }
+                    className={
+                      tone === toneOption
+                        ? 'selected'
+                        : ''
+                    }
+                  >
+                    {toneOption}
+                  </button>
+
+                )
+              )}
+
+            </div>
+
+          </div>
+
+
+          <button
+            className="button button-primary generate-button"
+            onClick={generate}
+            disabled={loading}
+          >
+
+            {loading ? (
+              <>
+                <span className="spinner" />
+                THE ARENA IS LISTENING...
+              </>
+            ) : (
+              <>
+                <Sparkles size={16} />
+                GENERATE HYPE
+                <ArrowRight size={15} />
+              </>
+            )}
+
+          </button>
+
+
+          {error && (
+            <p
+              className="ai-error"
+              role="alert"
+            >
+              {error}
+            </p>
+          )}
+
+
+          <small className="ai-note">
+            <Shield size={13} />
+            API KEY SECURED SERVER-SIDE
+          </small>
+
+        </div>
+
+
+        {/* ================= AI OUTPUT ================= */}
+
+        <div className="ai-output">
+
+          <div className="output-top">
+
+            <span>
+              <AudioLines size={15} />
+              TRANSMISSION /
+              {' '}
+              {hype
+                ? 'RECEIVED'
+                : 'STANDBY'}
+            </span>
+
+            <span>
+              AA—AI
+            </span>
+
+          </div>
+
+
+          <AnimatePresence mode="wait">
+
+            {hype ? (
+
+              <motion.div
+                key={hype}
+                className="hype-result"
+                initial={{
+                  opacity: 0,
+                  y: 12
+                }}
+                animate={{
+                  opacity: 1,
+                  y: 0
+                }}
+                exit={{
+                  opacity: 0
+                }}
+              >
+
+                <div className="quote-mark">
+                  “
+                </div>
+
+                <p>
+                  {hype}
+                </p>
+
+
+                <div className="output-actions">
+
+                  <button
+                    onClick={generate}
+                    disabled={loading}
+                  >
+                    <RotateCcw size={13} />
+                    GENERATE AGAIN
+                  </button>
+
+                  <button
+                    onClick={copy}
+                  >
+                    <Copy size={13} />
+
+                    {copied
+                      ? 'COPIED'
+                      : 'COPY HYPE'}
+
+                  </button>
+
+                </div>
+
+              </motion.div>
+
+            ) : (
+
+              <motion.div
+                key="empty"
+                className="output-placeholder"
+                initial={{
+                  opacity: 0
+                }}
+                animate={{
+                  opacity: 1
+                }}
+              >
+
+                <div className="sound-wave">
+
+                  {Array.from(
+                    { length: 19 },
+                    (_, i) => (
+                      <i
+                        key={i}
+                        style={{
+                          '--i': i
+                        }}
+                      />
+                    )
+                  )}
+
+                </div>
+
+                <b>
+                  {loading
+                    ? 'THE ARENA IS LISTENING...'
+                    : 'YOUR SQUAD. YOUR STORY.'}
+                </b>
+
+                <span>
+                  {loading
+                    ? 'GENERATING TRANSMISSION'
+                    : 'SELECT YOUR TEAM TO BEGIN'}
+                </span>
+
+              </motion.div>
+
+            )}
+
+          </AnimatePresence>
+
+        </div>
+
+      </div>
+
+    </section>
+  )
+}
+
+
+/* =========================================================
+   RESET MODAL
+========================================================= */
+
+function Modal({
+  onClose,
+  onConfirm
+}) {
+  return (
+    <div
+      className="modal-backdrop"
+      role="presentation"
+      onMouseDown={e => {
+        if (
+          e.target ===
+          e.currentTarget
+        ) {
+          onClose()
+        }
+      }}
+    >
+
+      <motion.div
+        className="confirm-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="reset-title"
+        initial={{
+          opacity: 0,
+          y: 15,
+          scale: 0.97
+        }}
+        animate={{
+          opacity: 1,
+          y: 0,
+          scale: 1
+        }}
+      >
+
+        <button
+          className="modal-close"
+          onClick={onClose}
+          aria-label="Close"
+        >
+          <X size={18} />
+        </button>
+
+
+        <div className="modal-icon">
+          <RotateCcw />
+        </div>
+
+
+        <span className="section-kicker">
+          RESET CONFIRMATION
+        </span>
+
+
+        <h2 id="reset-title">
+          CLEAR THE
+          <br />
+          <em>ARENA?</em>
+        </h2>
+
+
+        <p>
+          This removes all players,
+          teams and generated fixtures
+          from this device.
+          This action can’t be undone.
+        </p>
+
+
+        <div className="modal-actions">
+
+          <button
+            className="button button-quiet"
+            onClick={onClose}
+          >
+            KEEP TOURNAMENT
+          </button>
+
+          <button
+            className="button button-danger"
+            onClick={onConfirm}
+          >
+            RESET EVERYTHING
+          </button>
+
+        </div>
+
+      </motion.div>
+
+    </div>
+  )
+}
+
 
 export default App
